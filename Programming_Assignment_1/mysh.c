@@ -42,7 +42,7 @@ int main(void)
             i++;
         }
         args[i] = NULL;
-        strip(args[0]);
+        
 
         /* Check if the user wants to exit */
         if (strcmp(args[0], "exit") == 0)
@@ -56,13 +56,11 @@ int main(void)
         }
         else if (strcmp(args[0], "PS1") == 0)
         {
-            /* Change the prompt and remove the newline */
-            strip(args[1]);
+            /* Change the prompt */
             prompt = args[1];
-        } /* Implement the cat command */
+        } 
         else if (strcmp(args[0], "cat") == 0)
         {
-            strip(args[1]);
             switch (cat(args[1]))
             {
             case 0:
@@ -73,13 +71,11 @@ int main(void)
                 printf("File %s does not exist\n", args[1]);
             default:
                 /* File could not be opened for some other reason */
-                printf("File %s could not be opened", args[1]);
+                printf("File %s could not be opened\n", args[1]);
                 break;
             }
         } else if (strcmp(args[0], "cp") ==0)
         {
-            strip(args[1]);
-            strip(args[2]);
             switch (cp(args[1], args[2]))
             {
             case 0:
@@ -169,8 +165,8 @@ int echo(char *args[])
     {
         printf("%s ", args[i]);
     }
-    /* return to column 1 */
-    printf("%c", '\r');
+    /* go to a new line and return to column 1 */
+    printf("%s", "\n\r");
     return 0;
 }
 
