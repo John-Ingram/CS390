@@ -198,4 +198,5 @@ int cat(char *filename)
     /* Close the file and go to col 1 on a new line */
     fclose(file);
     printf("%s", "\n\r");
+    return 0;
 }
