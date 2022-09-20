@@ -159,14 +159,22 @@ int cp(char *src, char *dest)
 /* Implementation of the echo command */
 int echo(char *args[])
 {
-    int i;
+    int i = 1;
+    char *end_string = "\n\r";
+    /* If the first argument is -n, do not print a newline */
+    if (strcmp(args[1], "-n") == 0)
+    {
+        end_string = "";
+        i++;
+    }
+    
     /* Print the arguments */
-    for (i = 1; args[i] != NULL; i++)
+    for (; args[i] != NULL && strcmp(args[i], "-n") != 0; i++)
     {
         printf("%s ", args[i]);
     }
     /* go to a new line and return to column 1 */
-    printf("%s", "\n\r");
+    printf("%s", end_string);
     return 0;
 }
 
