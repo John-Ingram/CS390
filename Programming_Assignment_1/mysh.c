@@ -15,7 +15,7 @@
 int main(void)
 {
     char *args[MAX_LINE / 2 + 1]; /* the command line arguments */
-    char *prompt = "$";           /* the promp string */
+    char *prompt = "$ ";           /* the promp string */
     int i;                        /* loop counter */
     int status;                   /* status of the child process */
     pid_t pid;                    /* process id of the child process */
