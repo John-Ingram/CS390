@@ -94,7 +94,11 @@ int main(void)
                 printf("File could not be copied\n");
                 break;
             }
+        } else if (strcmp(args[0], "rm") == 0)
+        {
+            /* code */
         }
+        
         
         /* Debugging code, prints the arguments if no other was executed */
         else
@@ -203,4 +207,19 @@ int cat(char *filename)
     fclose(file);
     printf("%s", "\n\r");
     return 0;
+}
+
+/* Implementation of the rm command */
+int rm(char *filename)
+{
+    if (remove(filename) == 0)
+    {
+        /* File was deleted successfully */
+        return 0;
+    }
+    else
+    {
+        /* File could not be deleted */
+        return 1;
+    }
 }
