@@ -130,7 +130,7 @@ int strip(char *str)
 int cp(char *src, char *dest)
 {
     /* Open the source file */
-    FILE *srcFile = fopen(src, "r");
+    FILE *srcFile = fopen(src, "rb");
     if (srcFile == NULL)
     {
         /* Source file could not be opened */
@@ -138,7 +138,7 @@ int cp(char *src, char *dest)
     }
 
     /* Open the destination file */
-    FILE *destFile = fopen(dest, "w");
+    FILE *destFile = fopen(dest, "wb");
     if (destFile == NULL)
     {
         /* Destination file could not be opened TODO: Ask about this. How can I get errno?*/
