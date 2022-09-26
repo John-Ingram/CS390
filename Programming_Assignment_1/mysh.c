@@ -17,6 +17,7 @@ int main(void)
     char *args[MAX_LINE / 2 + 1]; /* the command line arguments */
     char *prompt = "$ ";           /* the promp string */
     int i;                        /* loop counter */
+    int argc;                     /* number of arguments */
     int status;                   /* status of the child process */
     pid_t pid;                    /* process id of the child process */
 
@@ -42,6 +43,7 @@ int main(void)
             i++;
         }
         args[i] = NULL;
+        argc = i - 1; /* subtract 1 for the command */
         
 
         /* Check if the user wants to exit */
@@ -96,8 +98,52 @@ int main(void)
             }
         } else if (strcmp(args[0], "rm") == 0)
         {
-            /* code */
+            /* Run the rm command for each file name*/
+            for (i = 1; i <= argc; i++)
+            {
+                switch (rm(args[i]))
+                {
+                case 0:
+                    /* File was removed successfully */
+                    break;
+                case 1:
+                    /* File could not be removed because it does not exist */
+                    printf("File %s does not exist\n", args[i]);
+                    break;
+                default:
+                    /* File could not be removed for some other reason */
+                    printf("File %s could not be removed\n", args[i]);
+                    break;
+                }
+            }
+        } else if (strcmp(args[0], "mkdir") == 0)
+        {
+            switch (makedir(args[1]))
+            {
+            case 0:
+                /* Directory was created successfully */
+                break;
+            default:
+                /* Directory could not be created*/
+                printf("Directory %s could not be created\n", args[1]);
+                break;
+            }
+        } else if (strcmp(args[0], "rmdir") == 0)
+        {
+            switch (removedir(args[1]))
+            {
+            case 0:
+                /* Directory was removed successfully */
+                break;
+            
+            default:
+                /* Directory could not be removed */
+                printf("Directory %s could not be removed\n", args[1]);
+                break;
+            }
         }
+        
+        
         
         
         /* Debugging code, prints the arguments if no other was executed */
@@ -220,6 +266,36 @@ int rm(char *filename)
     else
     {
         /* File could not be deleted */
+        return 1;
+    }
+}
+
+/* Implementation of the mkdir command */
+int makedir(char *dirname)
+{
+    if (mkdir(dirname, 0777) == 0)
+    {
+        /* Directory was created successfully */
+        return 0;
+    }
+    else
+    {
+        /* Directory could not be created */
+        return 1;
+    }
+}
+
+/* Implementation of the rmdir command */
+int removedir(char *dirname)
+{
+    if (rmdir(dirname) == 0)
+    {
+        /* Directory was removed successfully */
+        return 0;
+    }
+    else
+    {
+        /* Directory could not be removed */
         return 1;
     }
 }
