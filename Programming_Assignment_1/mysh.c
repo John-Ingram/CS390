@@ -60,33 +60,58 @@ int main(void)
         }
         else if (strcmp(args[0], "echo") == 0)
         {
-            echo(args, raw);
+            if (args[1] == NULL || (strcmp(args[1], "-n") == 0 && args[2] == NULL))
+            {
+                printf("echo: missing operand\n");
+                
+            }else{
+                echo(args, raw);
+            }
         }
         else if (strcmp(args[0], "PS1") == 0)
         {
-            /* Change the prompt */
-            prompt = malloc((strlen(raw) - 3) * sizeof(char));
-            strcpy(prompt, raw + 4);
-            strip(prompt);
+            /* If there is no argument then throw an error */
+            if (args[1] == NULL)
+            {
+                printf("PS1: missing operand\n");
+            }
+            else
+            {
+                /* Change the prompt */
+                prompt = malloc((strlen(raw) - 3) * sizeof(char));
+                strcpy(prompt, raw + 4);
+                strip(prompt);
+            }
         }
         else if (strcmp(args[0], "cat") == 0)
         {
-            switch (cat(args[1]))
+            /*If there is no file name, print an error message*/
+            if (args[1] == NULL)
             {
-            case 0:
-                /* File was opened and read successfully */
-                break;
-            case 1:
-                /* File could not be opened because it does not exist */
-                printf("File %s does not exist\n", args[1]);
-            default:
-                /* File could not be opened for some other reason */
-                printf("File %s could not be opened\n", args[1]);
-                break;
+                printf("cat: missing operand\n");
+            }
+            else{
+                switch (cat(args[1]))
+                {
+                case 0:
+                    /* File was opened and read successfully */
+                    break;
+                case 1:
+                    /* File could not be opened because it does not exist */
+                    printf("File %s does not exist\n", args[1]);
+                default:
+                    /* File could not be opened for some other reason */
+                    printf("File %s could not be opened\n", args[1]);
+                    break;
+                }
             }
         }
         else if (strcmp(args[0], "cp") == 0)
         {
+            if (args[1] == NULL)
+            {
+                printf("cp: missing operand\n");
+            }else{
             switch (cp(args[1], args[2]))
             {
             case 0:
@@ -105,58 +130,90 @@ int main(void)
                 printf("File could not be copied from %s to %s\n", args[1], args[2]);
                 break;
             }
+            }
         }
         else if (strcmp(args[0], "rm") == 0)
         {
-            /* Run the rm command for each file name*/
-            for (i = 1; i <= argc; i++)
+            /*If there is no file name, print an error message*/
+            if (args[1] == NULL)
             {
-                switch (rm(args[i]))
+                printf("rm: missing operand\n");
+            }
+            else{
+                /* Run the rm command for each file name*/
+                for (i = 1; i <= argc; i++)
                 {
-                case 0:
-                    /* File was removed successfully */
-                    break;
-                case 1:
-                    /* File could not be removed because it does not exist */
-                    printf("File %s does not exist\n", args[i]);
-                    break;
-                default:
-                    /* File could not be removed for some other reason */
-                    printf("File %s could not be removed\n", args[i]);
-                    break;
+                    switch (rm(args[i]))
+                    {
+                    case 0:
+                        /* File was removed successfully */
+                        break;
+                    case 1:
+                        /* File could not be removed because it does not exist */
+                        printf("File %s does not exist\n", args[i]);
+                        break;
+                    default:
+                        /* File could not be removed for some other reason */
+                        printf("File %s could not be removed\n", args[i]);
+                        break;
+                    }
                 }
             }
         }
         else if (strcmp(args[0], "mkdir") == 0)
         {
-            switch (makedir(args[1]))
+            /*If there is no file name, print an error message*/
+            if (args[1] == NULL)
             {
-            case 0:
-                /* Directory was created successfully */
-                break;
-            default:
-                /* Directory could not be created*/
-                printf("Directory %s could not be created\n", args[1]);
-                break;
+                printf("mkdir: missing operand\n");
+            }
+            else{
+                /* Run the mkdir command for each file name*/
+                for (i = 1; i <= argc; i++)
+                {
+                    switch (mkdir(args[i]))
+                    {
+                    case 0:
+                        /* Directory was created successfully */
+                        break;
+                    case 1:
+                        /* Directory could not be created because it already exists */
+                        printf("Directory %s already exists\n", args[i]);
+                        break;
+                    default:
+                        /* Directory could not be created for some other reason */
+                        printf("Directory %s could not be created\n", args[i]);
+                        break;
+                    }
+                }
             }
         }
         else if (strcmp(args[0], "rmdir") == 0)
         {
-            switch (removedir(args[1]))
+            /*If there is no file name, print an error message*/
+            if (args[1] == NULL)
             {
-            case 0:
-                /* Directory was removed successfully */
-                break;
-
-            default:
-                /* Directory could not be removed */
-                printf("Directory %s could not be removed\n", args[1]);
-                break;
+                printf("rmdir: missing operand\n");
+            }
+            else{
+                /* Run the rmdir command for each file name*/
+                for (i = 1; i <= argc; i++)
+                {
+                    switch (rmdir(args[i]))
+                    {
+                    case 0:
+                        /* Directory was removed successfully */
+                        break;
+                    default:
+                        /* Directory could not be removed for some other reason */
+                        printf("Directory %s could not be removed\n", args[i]);
+                        break;
+                    }
+                }
             }
         }
         else /*if no command was executed, display a little help text */
         {
-
             printf("command \"%s\" not found, try echo, PS1, cat , cp, rm, mkdir, or rmdir\n Type exit to exit\n", args[0]);
         }
 
@@ -182,6 +239,7 @@ int strip(char *str)
 /* Implementation of the cp command */
 int cp(char *src, char *dest)
 {
+
     /* Open the source file */
     FILE *srcFile = fopen(src, "rb");
     if (srcFile == NULL)
@@ -217,6 +275,13 @@ int cp(char *src, char *dest)
 int echo(char *args[], char *raw)
 {
     int commandLength = 5; /* length of the command "echo " */
+    /* If there is no first argument, print an error */
+    if (args[1] == NULL)
+    {
+        printf("echo: missing operand\n");
+        return 1;
+    }
+
     /* If the first argument is -n, do not print a newline */
     if (strcmp(args[1], "-n") == 0)
     {
