@@ -8,14 +8,15 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#define MAX_LINE 80 /* the max length of a command */
+#define MAX_LINE 80   /* the max length of a command */
 #define CHAR_END '\0' /* the end of a string */
 
 /* The main loop that will run the shell */
 int main(void)
 {
     char *args[MAX_LINE / 2 + 1]; /* the command line arguments */
-    char *prompt = "$ ";           /* the promp string */
+    char *raw = NULL;             /* the raw input from the user */
+    char *prompt = "$ ";          /* the promp string */
     int i;                        /* loop counter */
     int argc;                     /* number of arguments */
     int status;                   /* status of the child process */
@@ -32,9 +33,15 @@ int main(void)
         size_t size = 0;
         getline(&command, &size, stdin);
 
+        /* Copy the test into the raw string */
+        raw = malloc((strlen(command) + 1) * sizeof(char));
+        strcpy(raw, command);
+
         /* Parse the command into arguments */
         char *token = strtok(command, " ");
         i = 0;
+        /* If the command is PS1 then set the prompt */
+
         while (token != NULL)
         {
             args[i] = token;
@@ -44,7 +51,6 @@ int main(void)
         }
         args[i] = NULL;
         argc = i - 1; /* subtract 1 for the command */
-        
 
         /* Check if the user wants to exit */
         if (strcmp(args[0], "exit") == 0)
@@ -54,13 +60,15 @@ int main(void)
         }
         else if (strcmp(args[0], "echo") == 0)
         {
-            echo(args);
+            echo(args, raw);
         }
         else if (strcmp(args[0], "PS1") == 0)
         {
             /* Change the prompt */
-            prompt = args[1];
-        } 
+            prompt = malloc((strlen(raw) - 3) * sizeof(char));
+            strcpy(prompt, raw + 4);
+            strip(prompt);
+        }
         else if (strcmp(args[0], "cat") == 0)
         {
             switch (cat(args[1]))
@@ -76,7 +84,8 @@ int main(void)
                 printf("File %s could not be opened\n", args[1]);
                 break;
             }
-        } else if (strcmp(args[0], "cp") ==0)
+        }
+        else if (strcmp(args[0], "cp") == 0)
         {
             switch (cp(args[1], args[2]))
             {
@@ -93,10 +102,11 @@ int main(void)
                 break;
             default:
                 /* Some other error, something has gone very wrong */
-                printf("File could not be copied\n");
+                printf("File could not be copied from %s to %s\n", args[1], args[2]);
                 break;
             }
-        } else if (strcmp(args[0], "rm") == 0)
+        }
+        else if (strcmp(args[0], "rm") == 0)
         {
             /* Run the rm command for each file name*/
             for (i = 1; i <= argc; i++)
@@ -116,7 +126,8 @@ int main(void)
                     break;
                 }
             }
-        } else if (strcmp(args[0], "mkdir") == 0)
+        }
+        else if (strcmp(args[0], "mkdir") == 0)
         {
             switch (makedir(args[1]))
             {
@@ -128,34 +139,30 @@ int main(void)
                 printf("Directory %s could not be created\n", args[1]);
                 break;
             }
-        } else if (strcmp(args[0], "rmdir") == 0)
+        }
+        else if (strcmp(args[0], "rmdir") == 0)
         {
             switch (removedir(args[1]))
             {
             case 0:
                 /* Directory was removed successfully */
                 break;
-            
+
             default:
                 /* Directory could not be removed */
                 printf("Directory %s could not be removed\n", args[1]);
                 break;
             }
         }
-        
-        
-        
-        
-        /* Debugging code, prints the arguments if no other was executed */
-        else
+        else /*if no command was executed, display a little help text */
         {
-            for (i = 0; args[i] != NULL; i++)
-            {
-                printf("%s ", args[i]);
-            }
-            /* print the number of elements in args for debugging */
-            printf("%d\n", i);
+
+            printf("command \"%s\" not found, try echo, PS1, cat , cp, rm, mkdir, or rmdir\n Type exit to exit\n", args[0]);
         }
+
+        /* Free the memory in preperation for the next run */
+        free(command);
+        free(raw);
     }
 
     return 0;
@@ -166,7 +173,7 @@ int strip(char *str)
 {
     if (str[strlen(str) - 1] == '\n')
     {
-        str[strlen(str) - 1] = '\0';
+        str[strlen(str) - 1] = CHAR_END;
     }
 
     return 0;
@@ -207,24 +214,19 @@ int cp(char *src, char *dest)
 }
 
 /* Implementation of the echo command */
-int echo(char *args[])
+int echo(char *args[], char *raw)
 {
-    int i = 1;
-    char *end_string = "\n\r";
+    int commandLength = 5; /* length of the command "echo " */
     /* If the first argument is -n, do not print a newline */
     if (strcmp(args[1], "-n") == 0)
     {
-        end_string = "";
-        i++;
+        strip(raw);
+        commandLength += 3; /* length of the argument "-n " */
     }
-    
-    /* Print the arguments */
-    for (; args[i] != NULL && strcmp(args[i], "-n") != 0; i++)
-    {
-        printf("%s ", args[i]);
-    }
-    /* go to a new line and return to column 1 */
-    printf("%s", end_string);
+
+    /* Print the raw input minus the command */
+    printf("%s", raw + commandLength);
+
     return 0;
 }
 
