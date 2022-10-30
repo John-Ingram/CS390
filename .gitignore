@@ -1,6 +1,11 @@
 # Prerequisites
 *.d
 
+# Compiled File & Tarball
+mysh
+*.tar.gz
+*.tgz
+
 # Object files
 *.o
 *.ko
