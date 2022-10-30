@@ -1,8 +1,9 @@
 # Prerequisites
 *.d
 
-# Compiled File & Tarball
+# Compiled Files & Tarball
 mysh
+ls
 *.tar.gz
 *.tgz
 
