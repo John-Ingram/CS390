@@ -1,10 +1,11 @@
-/* John Ingram 
+/* John Ingram
 This program is a simple shell that can execute commands */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
@@ -19,8 +20,6 @@ int main(void)
     char *prompt = "$ ";          /* the promp string */
     int i;                        /* loop counter */
     int argc;                     /* number of arguments */
-    int status;                   /* status of the child process */
-    pid_t pid;                    /* process id of the child process */
 
     while (1)
     {
@@ -63,8 +62,9 @@ int main(void)
             if (args[1] == NULL || (strcmp(args[1], "-n") == 0 && args[2] == NULL))
             {
                 printf("echo: missing operand\n");
-                
-            }else{
+            }
+            else
+            {
                 echo(args, raw);
             }
         }
@@ -90,7 +90,8 @@ int main(void)
             {
                 printf("cat: missing operand\n");
             }
-            else{
+            else
+            {
                 switch (cat(args[1]))
                 {
                 case 0:
@@ -111,25 +112,27 @@ int main(void)
             if (args[1] == NULL)
             {
                 printf("cp: missing operand\n");
-            }else{
-            switch (cp(args[1], args[2]))
-            {
-            case 0:
-                /* File was copied successfully */
-                break;
-            case 1:
-                /* Source file error */
-                printf("Source file %s could not be opened\n", args[1]);
-                break;
-            case 2:
-                /* Destination file error */
-                printf("Destination file %s could not be opened\n", args[2]);
-                break;
-            default:
-                /* Some other error, something has gone very wrong */
-                printf("File could not be copied from %s to %s\n", args[1], args[2]);
-                break;
             }
+            else
+            {
+                switch (cp(args[1], args[2]))
+                {
+                case 0:
+                    /* File was copied successfully */
+                    break;
+                case 1:
+                    /* Source file error */
+                    printf("Source file %s could not be opened\n", args[1]);
+                    break;
+                case 2:
+                    /* Destination file error */
+                    printf("Destination file %s could not be opened\n", args[2]);
+                    break;
+                default:
+                    /* Some other error, something has gone very wrong */
+                    printf("File could not be copied from %s to %s\n", args[1], args[2]);
+                    break;
+                }
             }
         }
         else if (strcmp(args[0], "rm") == 0)
@@ -139,7 +142,8 @@ int main(void)
             {
                 printf("rm: missing operand\n");
             }
-            else{
+            else
+            {
                 /* Run the rm command for each file name*/
                 for (i = 1; i <= argc; i++)
                 {
@@ -167,7 +171,8 @@ int main(void)
             {
                 printf("mkdir: missing operand\n");
             }
-            else{
+            else
+            {
                 /* Run the mkdir command for each file name*/
                 for (i = 1; i <= argc; i++)
                 {
@@ -195,7 +200,8 @@ int main(void)
             {
                 printf("rmdir: missing operand\n");
             }
-            else{
+            else
+            {
                 /* Run the rmdir command for each file name*/
                 for (i = 1; i <= argc; i++)
                 {
@@ -212,9 +218,41 @@ int main(void)
                 }
             }
         }
-        else /*if no command was executed, display a little help text */
+        else /*Run command externally. At this point raw is no longer needed, so we can use it as a place to store our path to the command/file */
         {
-            printf("command \"%s\" not found, try echo, PS1, cat , cp, rm, mkdir, or rmdir\n Type exit to exit\n", args[0]);
+            /* Check if anything was entered at all*/
+            if (argc >= 0)
+            {
+
+                /* If the input is a command, raw will hold the path to that command. If not, make raw contain args[0]*/
+                /* If the input is a file path, or is not a command, put args[0] in raw*/
+                if (isFile(args[0]) == 1 || isCommand(args[0], raw) == 0)
+                {
+                    free(raw);
+                    raw = malloc((strlen(args[0]) + 1) * sizeof(char));
+                    strcpy(raw, args[0]);
+                }
+
+                /*Run the entered path with execv*/
+                switch (fork())
+                {
+                case -1:
+                    /* Error */
+                    printf("Error forking\n");
+                    break;
+                case 0:
+                    /* Child process */
+                    if (execv(raw, args) == -1)
+                    {
+                        perror("");
+                    }
+                    break;
+                default:
+                    /* Parent process */
+                    wait(NULL);
+                    break;
+                }
+            }
         }
 
         /* Free the memory in preperation for the next run */
@@ -222,6 +260,74 @@ int main(void)
         free(raw);
     }
 
+    return 0;
+}
+
+/* Checks to see if the string is a path to a file */
+int isFile(char *path)
+{
+    /* If the path is a directory, return 0 */
+    if (path[strlen(path) - 1] == '/')
+    {
+        return 0;
+    }
+    /* If the path is a file, return 1 */
+    else if (strchr(path, '/') != NULL && access(path, F_OK) != -1)
+    {
+        return 1;
+    }
+    /* If the path is neither a file or directory, return 0 */
+    else
+    {
+        return 0;
+    }
+}
+
+/* Checks if the string is a command on the PATH, if it is put the path to that program in newPath */
+int isCommand(char *command, char *newPath)
+{
+    char *realPath = getenv("PATH");
+    char *token;
+    char *pathCommand;
+    int i;
+
+    /* Copy path as to not break the real one*/
+    char *path = malloc((strlen(realPath) + 1) * sizeof(char));
+    strcpy(path, realPath);
+
+    /* Get the first token */
+    token = strtok(path, ":");
+
+    /* Walk through other tokens */
+    while (token != NULL)
+    {
+        /* Create the path to the command */
+        pathCommand = malloc((strlen(token) + strlen(command) + 2) * sizeof(char));
+        strcpy(pathCommand, token);
+        strcat(pathCommand, "/");
+        strcat(pathCommand, command);
+
+        /* Check if the file exists */
+        if (access(pathCommand, F_OK) != -1)
+        {
+            /* Free newpath and replace it with the path */
+            free(newPath);
+            newPath = malloc((strlen(pathCommand) + 1) * sizeof(char));
+            strcpy(newPath, pathCommand);
+
+            /* File exists */
+            free(pathCommand);
+            free(path);
+            return 1;
+        }
+
+        /* Get the next token */
+        token = strtok(NULL, ":");
+    }
+
+    /* File does not exist */
+    free(pathCommand);
+    free(path);
     return 0;
 }
 
