@@ -16,7 +16,25 @@ int GetPathIndex(int argc, char *argv[]);
 int main(int argc, char *argv[])
 {
     int status;
-    char *filename = argv[GetPathIndex(argc, argv)];
+    char filename[266] = "filename";
+
+    /* Run forever while I am still getting file names from fgets*/
+    while (1)
+    {
+        /* Get the file name from the pipe */
+        fgets(filename, 266, stdin);
+
+        /* If the user entered a blank line, or if tere are no new lines coming, exit the program */
+        if (filename[strlen(filename) - 1] != '\n' || strlen(filename) == 0)
+        {
+            return 0;
+        }
+
+        /* Remove the newline character from the end of the string */
+        filename[strlen(filename) - 1] = '\0';
+
+
+
     buffersize = 5 * ONE_MB;
     buffer = (unsigned char *)malloc(buffersize);
     status = ReadBinaryFile(filename);
@@ -47,6 +65,7 @@ int main(int argc, char *argv[])
                 {
                     fprintf(stdout, "CONVERTING TO UNIX\n");
                     ToUnix(buffer, datasize, filename);
+                    printf("Converted %s", filename);   
                 }
             }
             else
@@ -57,7 +76,10 @@ int main(int argc, char *argv[])
     }
     if (buffer)
         free(buffer);
-    return 0;
+    }
+
+    /* Empty the filename to get new data*/
+    filename[0] = '\0';
 }
 
 /* Check if there is a supplied Path, and return it's index in argv */
@@ -93,6 +115,7 @@ int ReadBinaryFile(char *filename)
     int bytesInFile = 0;
     FILE *ifs = 0;
     ifs = fopen(filename, "rb");
+    printf("Opening %s \n", filename);
     if (!ifs)
     {
         status = 1;
