@@ -1,8 +1,12 @@
 #!/usr/bin/perl
 
+#John Ingram
+#CS390 Programming Assignment 4
+
 use strict;
 use warnings;
 use diagnostics;
+use File::Path qw(remove_tree);
 
 use feature 'say';
 use feature "switch";
@@ -11,6 +15,7 @@ use v5.16;
 
 
 my @file_list;
+my @delete_list;
 
 if (@ARGV) 
 {    
@@ -28,44 +33,60 @@ else
     exit 1; 
 }  
 # if we get here, we have a list of files to process
-# Turn the list of files into a hash of file names and undef values
-my %files_hash = map { $_ => undef } @file_list;
 
-my $file_Will_Be_Deleted = 'n';
-
-foreach (keys %files_hash) 
+foreach (@file_list) 
 {  
-    # ask the user if they want to delete the file, and store the answer in the hash
-    say("Delete $_? (y/n)");
-    $files_hash{$_} = <STDIN>;
-    chomp $files_hash{$_};
+    # ask the user if they want to delete the file, if they do, add it to the delete list.
+    # if they answer q, then break out of the loop and go to the final confirmation
+    say("Delete $_? (y/q)");
+    my $answer = <STDIN>;
+    chomp $answer;
 
-    # if the user wants to delete the file, then set the flag to 'y'
-    if ($files_hash{$_} eq 'y') 
+    if ($answer eq 'y' || $answer eq 'Y') 
     {
-        $file_Will_Be_Deleted = 'y';
+        push @delete_list, $_;
+    }
+    elsif ($answer eq 'q' || $answer eq 'Q') 
+    {
+        last;
     }
 } 
 
 # if the user dosn't want to delete any files, exit
-if ($file_Will_Be_Deleted eq 'n') 
+if (@delete_list == 0) 
 {
-    say("No files will be deleted");
+    say("No files to delete");
     exit 0;
 }
 
 # now we have a hash of files and answers.
 # list the files that the user wants to delete
 say("Files to delete:");
-foreach (keys %files_hash) 
+foreach (@delete_list) 
 {  
-    if ($files_hash{$_} eq 'y' or $files_hash{$_} eq 'Y') 
-    {
-        say("$_ will be deleted");
-    }
+    say("$_ will be deleted");
 }
 
+# ask the user if they are sure they want to delete the files
 print "complete all deletions? [y]: ";
 my $input = <STDIN>;  
-#DO THE STUFF HERE  
+
+# if the user says yes, delete the files
+if ($input =~ /^y/i) 
+{
+    foreach (@delete_list) 
+    {
+        unlink $_;
+        # if the file is a directory, delete it
+        if (-d $_) 
+        {
+            remove_tree($_);
+        }
+    }
+}
+else 
+{
+    say("Deletions aborted");
+}
+
 exit 0; 
